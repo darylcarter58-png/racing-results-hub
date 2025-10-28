@@ -326,3 +326,4 @@ async function loadCards() {
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+document.addEventListener("DOMContentLoaded", init);
