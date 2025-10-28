@@ -4,6 +4,65 @@
    - Renders races with filters: date, course, search
    - Robust to small schema differences
 */
+function showTab(which) {
+  const res = document.getElementById("resultsSection");
+  const cards = document.getElementById("cardsSection");
+  const tr = document.getElementById("tabResults");
+  const tc = document.getElementById("tabCards");
+  const isCards = which === "cards";
+  res.style.display = isCards ? "none" : "";
+  cards.style.display = isCards ? "" : "none";
+  tr.classList.toggle("tab--active", !isCards);
+  tc.classList.toggle("tab--active", isCards);
+}
+
+async function loadCards() {
+  const status = document.getElementById("cardsStatus");
+  const box = document.getElementById("cards");
+  try {
+    status.textContent = "Loading racecards…";
+    const r = await fetch(`cards.json?cb=${Date.now()}`, { cache: "no-store" });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    const m = data.meetings || [];
+    status.textContent = `Meetings: ${m.length}`;
+    const parts = [];
+    m.forEach(meet => {
+      parts.push(`
+        <div class="cardcard">
+          <div class="font-semibold">${meet.course} — ${meet.meeting_date}</div>
+          ${meet.races.map(rc => `
+            <div class="mt-2">
+              <div class="opacity-70 text-sm">${rc.off_time || ""} • ${rc.race_title || ""}</div>
+              <table class="cardtable">
+                <thead><tr>
+                  <th>No</th><th>Horse</th><th>Jockey</th><th>Trainer</th><th>Wgt</th><th>Dr</th><th>Odds</th>
+                </tr></thead>
+                <tbody>
+                  ${(rc.runners || []).map(e => `
+                    <tr>
+                      <td>${e.no || ""}</td>
+                      <td>${e.horse || ""}</td>
+                      <td>${e.jockey || ""}</td>
+                      <td>${e.trainer || ""}</td>
+                      <td>${e.weight || ""}</td>
+                      <td>${e.draw || ""}</td>
+                      <td>${e.odds || ""}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `).join("")}
+        </div>
+      `);
+    });
+    box.innerHTML = parts.join("");
+  } catch (err) {
+    console.error(err);
+    status.textContent = "Unable to load cards.json";
+  }
+}
 
 (() => {
   const $ = (id) => document.getElementById(id);
