@@ -39,6 +39,20 @@
     <p class="sub">Latest results, fixtures, and <strong>deep-link</strong> replays (no embeds).</p>
     <div id="last-updated" class="muted"></div>
   </header>
+<div class="tabs">
+  <button id="tabResults" class="tab tab--active">Results</button>
+  <button id="tabCards" class="tab">Racecards</button>
+</div>
+<!-- existing results UI stays as is -->
+<div id="resultsSection">
+  <!-- filters + status + results list you already have -->
+</div>
+
+<!-- new cards section -->
+<div id="cardsSection" style="display:none;">
+  <div id="cardsStatus" class="mt-2 text-sm opacity-70"></div>
+  <div id="cards"></div>
+</div>
 
   <main class="container">
     <section id="filters" class="card">
