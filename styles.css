@@ -22,3 +22,57 @@ header h1{ margin:0; font-size:32px; }
   #filters{ grid-template-columns:1fr; }
   .item{ grid-template-columns: 1fr; }
 }
+/* DCR Header */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #1e2e84;          /* Brand navy */
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+
+.site-header__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.site-header__logo {
+  height: 48px;
+  width: auto;
+  display: block;
+}
+
+.site-header__brand {
+  display: grid;
+  gap: 2px;
+}
+
+.site-header__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+
+.site-header__tagline {
+  margin: 0;
+  font-size: 13px;
+  opacity: .85;
+}
+
+.site-header__updated {
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: .75;
+}
+
+/* responsive */
+@media (max-width: 520px) {
+  .site-header__logo { height: 40px; }
+  .site-header__title { font-size: 20px; }
+}
