@@ -324,6 +324,15 @@ async function loadCards() {
     }
   };
 
-  document.addEventListener("DOMContentLoaded", init);
-})();
-document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+  init(); // your existing page setup
+
+  // Tab switching
+  document.getElementById("tabResults").addEventListener("click", () => showTab("results"));
+  document.getElementById("tabCards").addEventListener("click", () => {
+    showTab("cards");
+    loadCards(); // Fetch racecards when user clicks this tab
+  });
+});
+
+
