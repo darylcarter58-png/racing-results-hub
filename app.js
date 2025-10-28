@@ -334,5 +334,199 @@ async function loadCards() {
     loadCards(); // Fetch racecards when user clicks this tab
   });
 });
+// ---- FILTERS: minimal, no styling ----
+
+// in-memory cache of today's results
+window.ALL_RACES = window.ALL_RACES || null;
+
+// fetch once if we don't already have data
+async function ensureResultsData() {
+  if (window.ALL_RACES) return window.ALL_RACES;
+  const r = await fetch('results.json?cb=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('Failed to load results.json');
+  const data = await r.json();
+  window.ALL_RACES = Array.isArray(data.races) ? data.races : (Array.isArray(data) ? data : []);
+  return window.ALL_RACES;
+}
+
+// tiny renderer (keeps it simple)
+function renderResultsSimple(list) {
+  const box = document.getElementById('results');
+  if (!box) return;
+  if (!list || list.length === 0) {
+    box.innerHTML = '<div>No results match your filters.</div>';
+    return;
+  }
+  const html = list.map(r => `
+    <div class="result-card">
+      <div>${(r.meeting_date||'').slice(0,10)} ${r.off_time ? '• ' + r.off_time : ''} ${r.course ? '• ' + r.course : ''}</div>
+      <div><strong>${r.race_title || '(untitled race)'}</strong></div>
+      ${r.finishers ? `
+        <div>Winner: ${r.finishers['1']?.horse || '-'} ${r.finishers['1']?.sp ? '(SP ' + r.finishers['1'].sp + ')' : ''}</div>
+        <div>2nd: ${r.finishers['2']?.horse || '-'}</div>
+        <div>3rd: ${r.finishers['3']?.horse || '-'}</div>
+      ` : ''}
+    </div>
+  `).join('');
+  box.innerHTML = html;
+}
+
+// read values from the three inputs
+function readFilters() {
+  const dateEl   = document.getElementById('filterDate');
+  const courseEl = document.getElementById('filterCourse');
+  const searchEl = document.getElementById('filterSearch');
+  return {
+    date: dateEl ? dateEl.value : '',
+    course: courseEl ? courseEl.value.trim().toLowerCase() : '',
+    q: searchEl ? searchEl.value.trim().toLowerCase() : ''
+  };
+}
+
+// apply filters and re-render
+async function applyFilters() {
+  const all = await ensureResultsData();
+  const { date, course, q } = readFilters();
+
+  // normalise date input: yyyy-mm-dd only
+  const wantDate = date ? date.slice(0,10) : '';
+
+  const filtered = all.filter(r => {
+    const rDate = (r.meeting_date || '').slice(0,10);
+    const rCourse = (r.course || '').toLowerCase();
+    const hay = [
+      r.race_title, r.course, r.off_time,
+      r.finishers?.['1']?.horse, r.finishers?.['2']?.horse, r.finishers?.['3']?.horse
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if (wantDate && rDate !== wantDate) return false;
+    if (course && !rCourse.includes(course)) return false;
+    if (q && !hay.includes(q)) return false;
+    return true;
+  });
+
+  // optional count/status
+  const status = document.getElementById('status');
+  if (status) status.textContent = `${filtered.length} result${filtered.length===1?'':'s'}`;
+
+  renderResultsSimple(filtered);
+}
+
+// hook up the button + live typing
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('filterButton');
+  const d   = document.getElementById('filterDate');
+  const c   = document.getElementById('filterCourse');
+  const s   = document.getElementById('filterSearch');
+
+  if (btn) btn.addEventListener('click', applyFilters);
+  if (d)   d.addEventListener('input', applyFilters);
+  if (c)   c.addEventListener('input', applyFilters);
+  if (s)   s.addEventListener('input', applyFilters);
+
+  // first render (no filters)
+  applyFilters().catch(err => {
+    const status = document.getElementById('status');
+    if (status) status.textContent = 'Unable to load results.json';
+    console.error(err);
+  });
+});
+// ---- FILTERS: minimal, no styling ----
+
+// in-memory cache of today's results
+window.ALL_RACES = window.ALL_RACES || null;
+
+// fetch once if we don't already have data
+async function ensureResultsData() {
+  if (window.ALL_RACES) return window.ALL_RACES;
+  const r = await fetch('results.json?cb=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('Failed to load results.json');
+  const data = await r.json();
+  window.ALL_RACES = Array.isArray(data.races) ? data.races : (Array.isArray(data) ? data : []);
+  return window.ALL_RACES;
+}
+
+// tiny renderer (keeps it simple)
+function renderResultsSimple(list) {
+  const box = document.getElementById('results');
+  if (!box) return;
+  if (!list || list.length === 0) {
+    box.innerHTML = '<div>No results match your filters.</div>';
+    return;
+  }
+  const html = list.map(r => `
+    <div class="result-card">
+      <div>${(r.meeting_date||'').slice(0,10)} ${r.off_time ? '• ' + r.off_time : ''} ${r.course ? '• ' + r.course : ''}</div>
+      <div><strong>${r.race_title || '(untitled race)'}</strong></div>
+      ${r.finishers ? `
+        <div>Winner: ${r.finishers['1']?.horse || '-'} ${r.finishers['1']?.sp ? '(SP ' + r.finishers['1'].sp + ')' : ''}</div>
+        <div>2nd: ${r.finishers['2']?.horse || '-'}</div>
+        <div>3rd: ${r.finishers['3']?.horse || '-'}</div>
+      ` : ''}
+    </div>
+  `).join('');
+  box.innerHTML = html;
+}
+
+// read values from the three inputs
+function readFilters() {
+  const dateEl   = document.getElementById('filterDate');
+  const courseEl = document.getElementById('filterCourse');
+  const searchEl = document.getElementById('filterSearch');
+  return {
+    date: dateEl ? dateEl.value : '',
+    course: courseEl ? courseEl.value.trim().toLowerCase() : '',
+    q: searchEl ? searchEl.value.trim().toLowerCase() : ''
+  };
+}
+
+// apply filters and re-render
+async function applyFilters() {
+  const all = await ensureResultsData();
+  const { date, course, q } = readFilters();
+
+  // normalise date input: yyyy-mm-dd only
+  const wantDate = date ? date.slice(0,10) : '';
+
+  const filtered = all.filter(r => {
+    const rDate = (r.meeting_date || '').slice(0,10);
+    const rCourse = (r.course || '').toLowerCase();
+    const hay = [
+      r.race_title, r.course, r.off_time,
+      r.finishers?.['1']?.horse, r.finishers?.['2']?.horse, r.finishers?.['3']?.horse
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    if (wantDate && rDate !== wantDate) return false;
+    if (course && !rCourse.includes(course)) return false;
+    if (q && !hay.includes(q)) return false;
+    return true;
+  });
+
+  // optional count/status
+  const status = document.getElementById('status');
+  if (status) status.textContent = `${filtered.length} result${filtered.length===1?'':'s'}`;
+
+  renderResultsSimple(filtered);
+}
+
+// hook up the button + live typing
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('filterButton');
+  const d   = document.getElementById('filterDate');
+  const c   = document.getElementById('filterCourse');
+  const s   = document.getElementById('filterSearch');
+
+  if (btn) btn.addEventListener('click', applyFilters);
+  if (d)   d.addEventListener('input', applyFilters);
+  if (c)   c.addEventListener('input', applyFilters);
+  if (s)   s.addEventListener('input', applyFilters);
+
+  // first render (no filters)
+  applyFilters().catch(err => {
+    const status = document.getElementById('status');
+    if (status) status.textContent = 'Unable to load results.json';
+    console.error(err);
+  });
+});
 
 
