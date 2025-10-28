@@ -106,3 +106,36 @@
     loadResults();
   });
 })();
+document.addEventListener("DOMContentLoaded", async () => {
+  const resultsContainer = document.getElementById("results");
+  resultsContainer.innerHTML = "Loading live results...";
+
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const res = await fetch(`https://api.theracingapi.com/v1/results?date=${today}&countries=GB,IE`, {
+      headers: {
+        "Authorization": "Basic " + btoa("VVYrGi3VoZVFTLEJhzX21s1c:Osmg8xoZk7bpbYaqNMbCeEdk")
+      }
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.races || !data.races.length) {
+      resultsContainer.innerHTML = "No live results yet.";
+      return;
+    }
+
+    resultsContainer.innerHTML = data.races.map(r => `
+      <div class="race">
+        <h3>${r.race_title} — ${r.course}</h3>
+        <p><strong>Off:</strong> ${r.off_time}</p>
+        <p><strong>1st:</strong> ${r.results[0]?.horse}</p>
+        <p><strong>2nd:</strong> ${r.results[1]?.horse || '-'}</p>
+        <p><strong>3rd:</strong> ${r.results[2]?.horse || '-'}</p>
+      </div>
+    `).join("");
+  } catch (err) {
+    resultsContainer.innerHTML = `<p style="color:red">⚠️ Error loading live results: ${err.message}</p>`;
+  }
+});
