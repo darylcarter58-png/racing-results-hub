@@ -1,0 +1,46 @@
+name: Fetch results & publish JSON
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 minutes (UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r automation/requirements.txt
+
+      - name: Generate results.json
+        env:
+          SOURCE_CSV_URL: ${{ secrets.SOURCE_CSV_URL }}
+          COURSE_ALIASES: ${{ secrets.COURSE_ALIASES }}
+          OUTPUT_PATH: data/results.json
+        run: |
+          python automation/fetch_results.py
+
+      - name: Commit results.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/results.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update results.json [skip ci]"
+            git push
+          fi
