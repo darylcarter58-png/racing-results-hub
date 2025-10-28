@@ -1,45 +1,49 @@
-name: Update Results (auto)
-permissions:
-contents: write
+name: Update results
 
 on:
-workflow_dispatch: # allows the Run workflow button
-schedule:
-- cron: '*/15 10-22 * * *' # every 15 mins, 11:00–23:00 UK
-push: # run whenever we push to main
-branches: [ "main" ]
-paths:
-- "fetch_results.py"
-- "requirements.txt"
-- ".github/workflows/update-results.yml"
-- "results.json"
+  workflow_dispatch:
+  schedule:
+    - cron: "*/15 10-22 * * *"   # every 15 mins, 10:00–22:59 UTC
+  push:
+    branches:
+      - main
+    paths:
+      - fetch_results.py
+      - requirements.txt
+      - .github/workflows/update-results.yml
+      - results.json
+
+# allow committing back to the repo
+permissions:
+  contents: write
 
 jobs:
-build:
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-- name: Setup Python
-uses: actions/setup-python@v5
-with:
-python-version: '3.x'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
 
-- name: Install dependencies
-run: |
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-- name: Run fetch_results.py
-env:
-RESULTS_API_URL: ${{ secrets.RESULTS_API_URL }}
-RESULTS_API_KEY: ${{ secrets.RESULTS_API_KEY }}
-run: |
-python fetch_results.py
+      - name: Run fetch_results.py
+        env:
+          RESULTS_API_URL: ${{ secrets.RESULTS_API_URL }}
+          RESULTS_API_KEY: ${{ secrets.RESULTS_API_KEY }}
+        run: |
+          python fetch_results.py
 
-- name: Commit & push if results.json changed
-run: |
-git config user.name "results-bot"
-git config user.email "results-bot@users.noreply.github.com"
-git add results.json || true
-git diff --quiet && echo "No changes" || (git commit -m "Auto-update results" && git push)
+      - name: Commit & push if results.json changed
+        run: |
+          git config user.name "results-bot"
+          git config user.email "results-bot@users.noreply.github.com"
+          git add results.json || true
+          git diff --quiet && echo "No changes" || (git commit -m "Auto-update results" && git push)
