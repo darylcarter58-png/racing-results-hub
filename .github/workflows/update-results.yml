@@ -3,23 +3,17 @@ name: Update results
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/15 10-22 * * *"   # every 15 mins, 10:00–22:59 UTC
-  push:
-    branches:
-      - main
-    paths:
-      - fetch_results.py
-      - requirements.txt
-      - .github/workflows/update-results.yml
-      - results.json
+    - cron: "*/15 09-22 * * *"   # every 15 mins, 09:00–22:59 UTC
 
-# allow committing back to the repo
 permissions:
   contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    # If you stored secrets in an Environment, uncomment the next line and set its name:
+    # environment: Production
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,10 +28,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Safe debug: confirms secrets are PRESENT without printing values
+      - name: Confirm secrets are available (no values printed)
+        env:
+          RACING_API_BASE: ${{ secrets.RACING_API_BASE }}
+          RACING_API_USER: ${{ secrets.RACING_API_USER }}
+          RACING_API_PASS: ${{ secrets.RACING_API_PASS }}
+        run: |
+          python - << 'PY'
+          import os
+          print("RACING_API_BASE set:", bool(os.getenv("RACING_API_BASE")))
+          print("RACING_API_USER set:", bool(os.getenv("RACING_API_USER")))
+          print("RACING_API_PASS set:", bool(os.getenv("RACING_API_PASS")))
+          PY
+
       - name: Run fetch_results.py
         env:
-          RESULTS_API_URL: ${{ secrets.RESULTS_API_URL }}
-          RESULTS_API_KEY: ${{ secrets.RESULTS_API_KEY }}
+          RACING_API_BASE: ${{ secrets.RACING_API_BASE }}
+          RACING_API_USER: ${{ secrets.RACING_API_USER }}
+          RACING_API_PASS: ${{ secrets.RACING_API_PASS }}
         run: |
           python fetch_results.py
 
@@ -45,5 +54,5 @@ jobs:
         run: |
           git config user.name "results-bot"
           git config user.email "results-bot@users.noreply.github.com"
-          git add data/results.json || true
+          git add results.json || true
           git diff --quiet && echo "No changes" || (git commit -m "Auto-update results" && git push)
