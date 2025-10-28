@@ -1,5 +1,6 @@
 # DCR Hub — Automation
 
+
 This folder contains:
 - `providers.yaml` — provider deep-link templates.
 - `fetch_results.py` — builds `data/results.json` from a CSV/JSON feed and templates.
