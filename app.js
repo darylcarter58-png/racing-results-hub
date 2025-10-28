@@ -528,5 +528,38 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error(err);
   });
 });
+// ---- TEMP: prove data flows to the page ----
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const r = await fetch('results.json?cb=' + Date.now(), { cache: 'no-store' });
+    const json = await r.json();
+    const races = Array.isArray(json?.races) ? json.races : (Array.isArray(json) ? json : []);
+    console.log('results.json races:', races.length, races.slice(0,2));
+
+    const box = document.getElementById('results');
+    if (!box) return;
+
+    if (!races.length) {
+      box.innerHTML = '<div>No races in results.json (yet). Try again later or check the Action log.</div>';
+      return;
+    }
+
+    box.innerHTML = races.slice(0,10).map(r => `
+      <div>
+        <div>${(r.meeting_date||'').slice(0,10)} ${r.off_time? '• '+r.off_time:''} ${r.course? '• '+r.course:''}</div>
+        <strong>${r.race_title || '(untitled race)'}</strong>
+        ${r.finishers ? `
+          <div>Winner: ${r.finishers['1']?.horse || '-'}</div>
+          <div>2nd: ${r.finishers['2']?.horse || '-'}</div>
+          <div>3rd: ${r.finishers['3']?.horse || '-'}</div>
+        ` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error(e);
+    const s = document.getElementById('status');
+    if (s) s.textContent = 'Unable to load results.json';
+  }
+});
 
 
