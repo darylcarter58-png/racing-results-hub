@@ -140,3 +140,12 @@ header h1{ margin:0; font-size:32px; }
   .brand__logo { height: 38px; }
   .brand__title { font-size: 20px; }
 }
+.brand__logo {
+  height: 56px;           /* adjust as needed */
+  max-width: 320px;
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+  display: block;
+  border-radius: 0;
+}
