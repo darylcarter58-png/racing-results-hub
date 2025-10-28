@@ -561,5 +561,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (s) s.textContent = 'Unable to load results.json';
   }
 });
+// ---- SIMPLE RESULTS RENDERER ----
+document.addEventListener('DOMContentLoaded', async () => {
+  const resultsBox = document.getElementById('results');
+  const status = document.getElementById('status');
+  if (!resultsBox) return;
+
+  try {
+    const res = await fetch('results.json?cb=' + Date.now(), { cache: 'no-store' });
+    const json = await res.json();
+    const races = Array.isArray(json?.races) ? json.races : [];
+
+    if (!races.length) {
+      resultsBox.innerHTML = '<p>No races found in results.json.</p>';
+      return;
+    }
+
+    const html = races.map(r => `
+      <div class="race-card">
+        <h3>${r.race_title || '(No title)'} — ${r.course || ''}</h3>
+        <p><strong>Date:</strong> ${r.meeting_date || ''} | <strong>Off:</strong> ${r.off_time || ''}</p>
+        <p><strong>Winner:</strong> ${r.horse || '-'} (${r.position || ''}, SP ${r.sp || '-'})</p>
+        <p>${r.note || ''}</p>
+        ${r.replay_links && r.replay_links.length ? `
+          <p><strong>Replays:</strong>
+            ${r.replay_links.map(link => `<a href="${link.url}" target="_blank">${link.label}</a>`).join(' | ')}
+          </p>
+        ` : ''}
+      </div>
+    `).join('');
+
+    resultsBox.innerHTML = html;
+    if (status) status.textContent = `Loaded ${races.length} race${races.length === 1 ? '' : 's'}.`;
+  } catch (err) {
+    console.error(err);
+    resultsBox.innerHTML = '<p>Error loading results.</p>';
+    if (status) status.textContent = 'Failed to fetch results.json';
+  }
+});
 
 
