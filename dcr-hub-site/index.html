@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DCR Hub — Results & Replays</title>
+  <meta name="description" content="Daryl Carter Racing Hub — latest results and deep-link replays." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="container">
+    <h1>DCR Hub</h1>
+    <p class="sub">Latest results, fixtures, and <strong>deep-link</strong> replays (no embeds).</p>
+    <div id="last-updated" class="muted"></div>
+  </header>
+
+  <main class="container">
+    <section id="filters" class="card">
+      <div class="row">
+        <label for="date">Date</label>
+        <input id="date" type="date" />
+      </div>
+      <div class="row">
+        <label for="course">Course</label>
+        <input id="course" type="text" placeholder="e.g. Newbury" />
+      </div>
+      <div class="row">
+        <label for="q">Search</label>
+        <input id="q" type="search" placeholder="horse, trainer, tip note…" />
+      </div>
+      <button id="clear">Clear</button>
+    </section>
+
+    <section id="results" class="list"></section>
+  </main>
+
+  <footer class="container muted">
+    <p>Built for DCR. Replays open on provider sites.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

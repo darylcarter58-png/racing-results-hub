@@ -1,0 +1,26 @@
+{
+  "updated_at": "2025-10-28T09:00:00Z",
+  "races": [
+    {
+      "meeting_date": "2025-10-27",
+      "course": "Newbury",
+      "off_time": "14:10",
+      "race_title": "Handicap (Class 3)",
+      "horse": "Sample Runner",
+      "position": "1st",
+      "sp": "4/1",
+      "note": "Sectional upgrade; found plenty.",
+      "handicap": true,
+      "replay_links": [
+        {
+          "label": "Racing TV",
+          "url": "https://www.racingtv.com/videos/meeting/2025-10-27/newbury/race-3"
+        },
+        {
+          "label": "Sky Sports Racing",
+          "url": "https://www.attheraces.com/racecard/2025-10-27/newbury/1410/video"
+        }
+      ]
+    }
+  ]
+}
