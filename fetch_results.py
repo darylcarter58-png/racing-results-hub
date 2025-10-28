@@ -1,130 +1,90 @@
-"""
-fetch_results.py
-- Builds data/results.json using an upstream CSV/JSON and provider templates.
-- Designed for GitHub Actions. Commits the updated JSON back to the repo.
-"""
-import os, json, csv, re, sys, io, urllib.request, yaml, datetime, pathlib
+import os, json, requests, datetime, hashlib, sys
 
-ROOT = pathlib.Path(__file__).resolve().parent
-OUTPUT_PATH = ROOT.parent / "data" / "results.json"  # expects repo layout with site at root or /docs
-PROVIDERS_FILE = ROOT / "providers.yaml"
+BASE = os.getenv("RACING_API_BASE", "https://api.theracingapi.com").rstrip("/")
+USER = os.getenv("RACING_API_USER")
+PASS = os.getenv("RACING_API_PASS")
 
-# Environment variables:
-# SOURCE_CSV_URL  — optional; if set, a CSV with columns: meeting_date,course,off_time,race_number,race_title,horse,position,sp,note,handicap
-# FALLBACK_FILE   — optional; local CSV path (useful for testing)
-# OUTPUT_PATH     — optional; override output JSON path (relative to repo root)
-# COURSE_ALIASES  — optional; JSON mapping for course name normalization
+TODAY = datetime.date.today().isoformat()
+OUTFILE = "results.json"
+TIMEOUT = 25
 
-def slugify(txt):
-    s = re.sub(r"[^a-zA-Z0-9\s-]", "", str(txt)).strip().lower()
-    s = re.sub(r"[\s_]+", "-", s)
-    return s
+def sha1(s: str) -> str:
+    import hashlib
+    return hashlib.sha1(s.encode("utf-8")).hexdigest()
 
-def hhmm(off_time):
-    # Accepts "14:10" or "1410"
-    if not off_time: return ""
-    m = re.match(r"^(\d{1,2}):(\d{2})$", str(off_time))
-    if m:
-        return f"{int(m.group(1)):02d}{m.group(2)}"
-    m = re.match(r"^(\d{3,4})$", str(off_time))
-    if m:
-        return m.group(1).zfill(4)
-    return ""
+def get_json(url, params=None):
+    r = requests.get(url, auth=(USER, PASS), params=params, timeout=TIMEOUT)
+    r.raise_for_status()
+    return r.json()
 
-def load_providers(path):
-    with open(path, "r") as f:
-        return yaml.safe_load(f)["providers"]
+def fetch_results():
+    params = {"date": TODAY, "countries": "GB,IE"}
+    url = f"{BASE}/results"
 
-def fetch_source_rows():
-    # Try SOURCE_CSV_URL, then FALLBACK_FILE
-    url = os.getenv("SOURCE_CSV_URL", "").strip()
-    local = os.getenv("FALLBACK_FILE", "").strip()
-    rows = []
-    if url:
-        with urllib.request.urlopen(url, timeout=20) as resp:
-            data = resp.read().decode("utf-8")
-            reader = csv.DictReader(io.StringIO(data))
-            rows = list(reader)
-    elif local and os.path.exists(local):
-        with open(local, newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            rows = list(reader)
-    else:
-        # Minimal mock if nothing provided
-        rows = [{
-            "meeting_date":"2025-10-27",
-            "course":"Newbury",
-            "off_time":"14:10",
-            "race_number":"3",
-            "race_title":"Handicap (Class 3)",
-            "horse":"Sample Runner",
-            "position":"1st",
-            "sp":"4/1",
-            "note":"Sectional upgrade; found plenty.",
-            "handicap":"true"
-        }]
-    return rows
+    print(f"Fetching: {url}")
+    data = get_json(url, params=params)
 
-def normalize_course(name, aliases_json):
-    if not name: return ""
-    if aliases_json:
-        try:
-            mapping = json.loads(aliases_json)
-            if name in mapping:
-                return mapping[name]
-        except Exception:
-            pass
-    return name
+    races_out = []
+    for meeting in data.get("meetings", []):
+        course = meeting.get("course") or meeting.get("venue") or ""
+        for race in meeting.get("races", []):
+            title = race.get("name") or race.get("race_title") or ""
+            off_time = race.get("off_time") or race.get("scheduled_time") or ""
+            entrants = race.get("entrants") or race.get("runners") or []
+            podium = {1: None, 2: None, 3: None}
 
-def build_replay_links(row, providers):
-    links = []
-    for p in providers:
-        template = p.get("replay_url_template")
-        if not template: 
-            continue
-        url = template.format(
-            meeting_date=row["meeting_date"],
-            course_slug=slugify(row["course"]),
-            off_time_hhmm=hhmm(row["off_time"]),
-            race_number=row.get("race_number") or ""
-        )
-        links.append({"label": p.get("label", p["key"]), "url": url})
-    return links
+            for e in entrants:
+                pos = e.get("finish_position") or e.get("position")
+                try:
+                    pos = int(str(pos).replace("=", "").strip())
+                except:
+                    pos = None
+                if pos in (1, 2, 3) and podium[pos] is None:
+                    podium[pos] = {
+                        "horse": e.get("horse_name") or e.get("name"),
+                        "jockey": e.get("jockey_name") or e.get("jockey"),
+                        "trainer": e.get("trainer_name") or e.get("trainer"),
+                        "sp": e.get("sp") or e.get("starting_price"),
+                    }
+
+            races_out.append({
+                "meeting_date": TODAY,
+                "course": course,
+                "off_time": off_time,
+                "race_title": title,
+                "finishers": {
+                    "1": podium[1],
+                    "2": podium[2],
+                    "3": podium[3],
+                },
+            })
+    return races_out
 
 def main():
-    providers = load_providers(PROVIDERS_FILE)
-    rows = fetch_source_rows()
-    aliases = os.getenv("COURSE_ALIASES", "")
-
-    races = []
-    for r in rows:
-        course = normalize_course(r.get("course",""), aliases)
-        race = {
-            "meeting_date": r.get("meeting_date",""),
-            "course": course,
-            "off_time": r.get("off_time",""),
-            "race_number": r.get("race_number",""),
-            "race_title": r.get("race_title",""),
-            "horse": r.get("horse",""),
-            "position": r.get("position",""),
-            "sp": r.get("sp",""),
-            "note": r.get("note",""),
-            "handicap": str(r.get("handicap","")).lower() in ("1","true","yes","y"),
-        }
-        race["replay_links"] = build_replay_links(race, providers)
-        races.append(race)
-
+    races = fetch_results()
     payload = {
-        "updated_at": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "updated_at": datetime.datetime.utcnow().isoformat(timespec="seconds") + "Z",
         "races": races
     }
 
-    out = os.getenv("OUTPUT_PATH", "")
-    output_path = pathlib.Path(out) if out else OUTPUT_PATH
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2)
-    print(f"Wrote {output_path} with {len(races)} races.")
+    new_blob = json.dumps(payload, indent=2, ensure_ascii=False)
+    new_hash = sha1(new_blob)
+
+    old_blob = ""
+    if os.path.exists(OUTFILE):
+        with open(OUTFILE, "r", encoding="utf-8") as f:
+            old_blob = f.read()
+
+    if sha1(old_blob) != new_hash:
+        with open(OUTFILE, "w", encoding="utf-8") as f:
+            f.write(new_blob)
+        print(f"✅ results.json updated ({len(races)} races).")
+    else:
+        print("No new results — unchanged.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("❌ ERROR:", e)
+        sys.exit(1)
