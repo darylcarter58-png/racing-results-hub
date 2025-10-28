@@ -1,9 +1,16 @@
 name: Update Results (auto)
 
 on:
+workflow_dispatch: # allows the Run workflow button
 schedule:
-- cron: '*/15 10-22 * * *' # every 15 mins between 11:00–23:00 UK time
-workflow_dispatch:
+- cron: '*/15 10-22 * * *' # every 15 mins, 11:00–23:00 UK
+push: # run whenever we push to main
+branches: [ "main" ]
+paths:
+- "fetch_results.py"
+- "requirements.txt"
+- ".github/workflows/update-results.yml"
+- "results.json"
 
 jobs:
 build:
