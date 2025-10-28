@@ -149,3 +149,9 @@ header h1{ margin:0; font-size:32px; }
   display: block;
   border-radius: 0;
 }
+.tabs { display:flex; gap:8px; margin:10px 0; }
+.tab { padding:8px 12px; border-radius:10px; border:1px solid rgba(0,0,0,.1); background:#f7f7fb; cursor:pointer; }
+.tab--active { background:#1e2e84; color:#fff; border-color:#1e2e84; }
+.cardcard { padding:14px; border:1px solid rgba(0,0,0,.08); border-radius:14px; background:#fff; box-shadow:0 1px 5px rgba(0,0,0,.05); margin-bottom:12px; }
+.cardtable { width:100%; border-collapse:collapse; font-size:14px; }
+.cardtable th, .cardtable td { padding:6px 8px; border-bottom:1px solid rgba(0,0,0,.06); text-align:left; }
