@@ -99,8 +99,19 @@ header h1{ margin:0; font-size:32px; }
   padding: 12px 0;
 }
 .brand__logo {
-  height: 44px; width: auto; display: block;
-  border-radius: 6px; /* optional: tidy edges */
+  height: 56px;           /* adjust to taste */
+  max-width: 320px;       /* prevents it getting too wide */
+  width: auto;
+  object-fit: contain;    /* never crop */
+  object-position: left center;
+  display: block;
+  border-radius: 0;       /* ensure no accidental rounding crops */
+}
+/* make room next to it on small screens */
+@media (max-width: 520px) {
+  .brand__logo { height: 46px; max-width: 240px; }
+}
+
 }
 .brand__title {
   margin: 0; font-size: 22px; font-weight: 800; letter-spacing: .2px;
