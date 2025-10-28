@@ -41,6 +41,13 @@ jobs:
           print("RACING_API_USER set:", bool(os.getenv("RACING_API_USER")))
           print("RACING_API_PASS set:", bool(os.getenv("RACING_API_PASS")))
           PY
+      - name: Run fetch_cards.py
+        env:
+          RACING_API_BASE: ${{ secrets.RACING_API_BASE }}
+          RACING_API_USER: ${{ secrets.RACING_API_USER }}
+          RACING_API_PASS: ${{ secrets.RACING_API_PASS }}
+        run: |
+          python fetch_cards.py
 
       - name: Run fetch_results.py
         env:
@@ -56,3 +63,9 @@ jobs:
           git config user.email "results-bot@users.noreply.github.com"
           git add results.json || true
           git diff --quiet && echo "No changes" || (git commit -m "Auto-update results" && git push)
+      - name: Commit & push if results.json changed
+        run: |
+          git config user.name "results-bot"
+          git config user.email "results-bot@users.noreply.github.com"
+          git add results.json cards.json || true
+          git diff --quiet && echo "No changes" || (git commit -m "Auto-update data" && git push)
