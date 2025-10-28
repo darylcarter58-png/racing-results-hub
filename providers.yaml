@@ -1,0 +1,15 @@
+# Replay and result provider templates
+# Edit the templates to match each provider's deep-link format.
+# Available placeholders (you can add more in fetch_results.py):
+# {meeting_date} — YYYY-MM-DD
+# {course_slug} — lowercase, hyphenated
+# {off_time_hhmm} — e.g. 1410
+# {race_number} — integer (1-based)
+
+providers:
+  - key: racing_tv
+    label: Racing TV
+    replay_url_template: "https://www.racingtv.com/videos/meeting/{meeting_date}/{course_slug}/race-{race_number}"
+  - key: sky_sports_racing
+    label: Sky Sports Racing
+    replay_url_template: "https://www.attheraces.com/racecard/{meeting_date}/{course_slug}/{off_time_hhmm}/video"
